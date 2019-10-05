@@ -1,7 +1,8 @@
 import express from "express";
-import graphlHTTP from "express-graphql";
+import  {ApolloServer, gql} from 'apollo-server-express';
 import mongoose from "mongoose";
-import schema from "./schema";
+import { typeDefs } from './typedefs';
+import { resolvers } from './resolvers';
 
 mongoose.Promise = global.Promise;
 mongoose.connect("mongodb://localhost/notetaking_db", {
@@ -10,21 +11,19 @@ mongoose.connect("mongodb://localhost/notetaking_db", {
   useFindAndModify:false
 });
 
-const app = express();
+
 const PORT = 4300;
+
+const app = express();
 app.get("/", (req, res) => {
   res.json({
     message: "Notetaking API v1"
   });
 });
 
-app.use(
-  "/graphql",
-  graphlHTTP({
-    schema: schema,
-    graphiql: true
-  })
-);
-app.listen(PORT, () => {
-  console.log(`Server is listening on PORT ${PORT}`);
-});
+const server = new ApolloServer({ typeDefs, resolvers });
+server.applyMiddleware({ app });
+
+app.listen({ port: PORT }, () =>
+  console.log(`🚀 Server ready at http://localhost:4300${server.graphqlPath}`)
+)
